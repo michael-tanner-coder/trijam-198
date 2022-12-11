@@ -1,7 +1,6 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: ghost follow player
 // TODO: ghost collision + game over
 // TODO: game reset
 // TODO: lose condition (fire goes out or hit by ghost)
@@ -422,7 +421,7 @@ const resetGame = () => {
   GAME_OBJECTS.length = 0;
 
   let player = JSON.parse(JSON.stringify(PLAYER));
-  GAME_OBJECTS = [player];
+  GAME_OBJECTS = [player, BLOCK];
 
   game_state = STATES.start;
   start_timer = 4;
@@ -576,6 +575,16 @@ const update = (dt) => {
       }
 
       // block.speed = easing(block.speed, block.top_speed);
+    });
+
+    // ghost group
+    ghosts.forEach((ghost) => {
+      ghost.x = easingWithRate(ghost.x, player.x, 0.01);
+      ghost.y = easingWithRate(ghost.y, player.y, 0.01);
+
+      if (collisionDetected(player.heart, ghost)) {
+        resetGame();
+      }
     });
 
     // prevent pixelation on movement
