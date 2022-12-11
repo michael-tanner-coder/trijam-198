@@ -1,7 +1,6 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: character collision against solids
 // TODO: generate forest
 // TODO: spawn fire wood blocks
 // TODO: wood collision pickup
@@ -39,7 +38,7 @@ var game_state = "in_game";
 
 // GRID PROPS
 const BLOCK_W = 32;
-const BLOCK_H = 16;
+const BLOCK_H = 32;
 const COLS = 6;
 const ROWS = 4;
 const PADDING = 4;
@@ -65,7 +64,7 @@ const PLAYER = {
     h: 8,
   },
   positions: [],
-  has_trail: true,
+  has_trail: false,
   buffer: 4,
 };
 
@@ -87,9 +86,9 @@ const SHOT = {
 
 const BLOCK = {
   x: GAME_W / 2,
-  y: 50,
+  y: 120,
   dx: 0,
-  dy: 1,
+  dy: 0,
   prev_x: 0,
   prev_y: 0,
   w: BLOCK_W,
@@ -104,7 +103,7 @@ const BLOCK = {
 
 // PLAYERS
 let player = JSON.parse(JSON.stringify(PLAYER));
-let GAME_OBJECTS = [player];
+let GAME_OBJECTS = [player, BLOCK];
 
 // UTILS
 const shoot = (shooter, projectile) => {
@@ -112,17 +111,15 @@ const shoot = (shooter, projectile) => {
   new_shot.x = shooter.x + shooter.w / 2 - projectile.w / 2;
   new_shot.y = shooter.y - shooter.h;
   GAME_OBJECTS.push(new_shot);
-
-  // playSound(SOUNDS["shoot"]);
 };
 
-const spawnBlock = () => {
+const spawnGhost = () => {
   let new_block = JSON.parse(JSON.stringify(BLOCK));
 
-  if (score > 200) {
-    new_block.w = 64;
-    new_block.h = 16;
-  }
+  // if (score > 200) {
+  //   new_block.w = 64;
+  //   new_block.h = 16;
+  // }
 
   // if (score > 400) {
   //   new_block.w = 128;
@@ -134,6 +131,8 @@ const spawnBlock = () => {
   new_block.y = 0;
   GAME_OBJECTS.push(new_block);
 };
+
+const spawnWood = () => {};
 
 const split = (object) => {
   // make 2 new objects
@@ -206,7 +205,12 @@ const move = (object) => {
     ? (object.dy = easingWithRate(object.dy, object.speed, 0.2))
     : null;
 
-  if (!INPUTS.ArrowRight && !INPUTS.ArrowLeft && !INPUTS.ArrowDown && !INPUTS.ArrowUp) {
+  if (
+    !INPUTS.ArrowRight &&
+    !INPUTS.ArrowLeft &&
+    !INPUTS.ArrowDown &&
+    !INPUTS.ArrowUp
+  ) {
     object.dx = easingWithRate(object.dx, 0, 0.2);
     object.dy = easingWithRate(object.dy, 0, 0.2);
   }
@@ -437,6 +441,7 @@ const update = (dt) => {
 
       // PLAYER MOVEMENT
       player.prev_x = player.x;
+      player.prev_y = player.y;
 
       move(player);
 
@@ -460,34 +465,38 @@ const update = (dt) => {
 
       if (player.x <= 0) player.x = player.prev_x;
       if (player.x + player.w >= GAME_W) player.x = player.prev_x;
+      if (player.y <= 0) player.y = player.prev_y;
+      if (player.y + player.h >= GAME_H) player.y = player.prev_y;
 
       // player hitboxes
       player.heart.w = player.w / 4;
 
       player.heart.x = player.x + player.w / 2 - player.heart.w / 2;
-      player.heart.y = player.y + 2;
+      player.heart.y = player.y + player.h / 2 - player.heart.h / 2;
 
       // collision against blocks
       blocks.forEach((block) => {
         if (collisionDetected(player.heart, block) && i_frames < 1) {
           // particle effect and screen shake on player destruction
-          poof(
-            player.x + player.w / 2,
-            player.y + player.h - player.h / 4,
-            player.color,
-            1,
-            false
-          );
-          screenshakesRemaining = HIT_SCREENSHAKES;
+          // poof(
+          //   player.x + player.w / 2,
+          //   player.y + player.h - player.h / 4,
+          //   player.color,
+          //   1,
+          //   false
+          // );
+          // screenshakesRemaining = HIT_SCREENSHAKES;
 
           // remove block that hit the player
-          GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
+          // GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
 
           // split the player into smaller players
-          split(player);
+          // split(player);
 
           // give the player a span of invincibility frames
-          i_frames = invincibility_duration;
+          // i_frames = invincibility_duration;
+          player.x = player.prev_x;
+          player.y = player.prev_y;
         }
       });
     });
@@ -529,7 +538,7 @@ const update = (dt) => {
     let spawn_count = blocks.length;
     spawn_timer++;
     if (spawn_timer >= spawn_rate && spawn_count < spawn_limit) {
-      spawnBlock();
+      // spawnGhost();
       spawn_timer = 0;
     }
 
@@ -560,7 +569,7 @@ const update = (dt) => {
 };
 
 const draw = () => {
-  context.fillStyle = PURPLE;
+  context.fillStyle = NAVY;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   // render objects
@@ -659,8 +668,8 @@ const draw = () => {
       }
 
       // heart
-      // context.fillStyle = obj.heart.color;
-      // context.fillRect(obj.heart.x, obj.heart.y, obj.heart.w, obj.heart.h);
+      context.fillStyle = "red";
+      context.fillRect(obj.heart.x, obj.heart.y, obj.heart.w, obj.heart.h);
     }
   });
 
