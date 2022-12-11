@@ -1,11 +1,20 @@
-// GAME CONCEPT: Space Invaders meets Asteriods!
-// Shoot at falling blocks to split them into tinier blocks.
-// Avoid them and keep shooting to score points.
-// If you get hit, you split into tiny turrets! Neat!
+// GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
-// TODO: nice to have: start menu
-// TODO: nice to have: custom controls
-// TODO: nice to have: sound effects
+// CORE:
+// TODO: character collision against solids
+// TODO: generate forest
+// TODO: spawn fire wood blocks
+// TODO: wood collision pickup
+// TODO: ghost spawning
+// TODO: ghost collision + game over
+// TODO: game reset
+// TODO: win condition (get 5 fire wood blocks)
+// TODO: night time color palette
+
+// NICE TO HAVE:
+// TODO: start menu
+// TODO: custom controls
+// TODO: sound effects
 
 const GAME_W = 320;
 const GAME_H = 240;
@@ -26,7 +35,7 @@ const STATES = {
   in_game: "in_game",
   menu: "menu",
 };
-var game_state = "menu";
+var game_state = "in_game";
 
 // GRID PROPS
 const BLOCK_W = 32;
@@ -40,18 +49,12 @@ const PLAYER = {
   x: GAME_W / 2 - 16,
   y: GAME_H - 48,
   dx: 0,
+  dy: 0,
   w: 32,
-  h: 16,
-  cannon: {
-    h: 8,
-    w: 8,
-    x: 12,
-    y: -8,
-    color: MID_PURPLE,
-  },
+  h: 32,
   color: MID_PURPLE,
   speed: 4,
-  type: "turret",
+  type: "player",
   shoot_rate: 18,
   shoot_timer: 0,
   heart: {
@@ -96,6 +99,7 @@ const BLOCK = {
   type: "block",
   positions: [],
   has_trail: false,
+  glow: true,
 };
 
 // PLAYERS
@@ -195,9 +199,16 @@ const move = (object) => {
   INPUTS.ArrowLeft
     ? (object.dx = easingWithRate(object.dx, -1 * object.speed, 0.2))
     : null;
+  INPUTS.ArrowUp
+    ? (object.dy = easingWithRate(object.dy, -1 * object.speed, 0.2))
+    : null;
+  INPUTS.ArrowDown
+    ? (object.dy = easingWithRate(object.dy, object.speed, 0.2))
+    : null;
 
-  if (!INPUTS.ArrowRight && !INPUTS.ArrowLeft) {
+  if (!INPUTS.ArrowRight && !INPUTS.ArrowLeft && !INPUTS.ArrowDown && !INPUTS.ArrowUp) {
     object.dx = easingWithRate(object.dx, 0, 0.2);
+    object.dy = easingWithRate(object.dy, 0, 0.2);
   }
 
   // A/D
@@ -338,8 +349,12 @@ const INPUTS = {
   // MOVE
   ArrowLeft: false,
   ArrowRight: false,
+  ArrowUp: false,
+  ArrowDown: false,
   a: false,
   d: false,
+  w: false,
+  s: false,
 
   // SHOOT
   [" "]: false,
@@ -372,9 +387,8 @@ const resetGame = () => {
 // LOOP
 const update = (dt) => {
   // collision groups
-  let turrets = GAME_OBJECTS.filter((obj) => obj.type === "turret");
+  let players = GAME_OBJECTS.filter((obj) => obj.type === "player");
   let blocks = GAME_OBJECTS.filter((obj) => obj.type === "block");
-  let shots = GAME_OBJECTS.filter((obj) => obj.type === "shot");
 
   // vfx
   particles.update();
@@ -418,56 +432,49 @@ const update = (dt) => {
     }
 
     // player group
-    turrets.forEach((turret) => {
-      trackPosition(turret);
+    players.forEach((player) => {
+      trackPosition(player);
 
       // PLAYER MOVEMENT
-      turret.prev_x = turret.x;
+      player.prev_x = player.x;
 
-      move(turret);
+      move(player);
 
-      if (INPUTS[" "] && turret.shoot_timer === 0) {
-        shoot(turret, SHOT);
-        turret.shoot_timer += 1;
+      if (player.shoot_timer > 0) {
+        player.shoot_timer += 1;
       }
 
-      if (turret.shoot_timer > 0) {
-        turret.shoot_timer += 1;
+      if (player.shoot_timer >= player.shoot_rate) {
+        player.shoot_timer = 0;
       }
 
-      if (turret.shoot_timer >= turret.shoot_rate) {
-        turret.shoot_timer = 0;
-      }
+      player.x += player.dx;
+      player.y += player.dy;
 
-      turret.x += turret.dx;
-
-      turrets.forEach((other_turret) => {
-        if (other_turret === turret) return;
-        if (collisionDetected(turret, other_turret)) {
-          turret.x = turret.prev_x;
+      players.forEach((other_player) => {
+        if (other_player === player) return;
+        if (collisionDetected(player, other_player)) {
+          player.x = player.prev_x;
         }
       });
 
-      if (turret.x <= 0) turret.x = turret.prev_x;
-      if (turret.x + turret.w >= GAME_W) turret.x = turret.prev_x;
+      if (player.x <= 0) player.x = player.prev_x;
+      if (player.x + player.w >= GAME_W) player.x = player.prev_x;
 
-      // turret hitboxes
-      turret.heart.w = turret.w / 4;
+      // player hitboxes
+      player.heart.w = player.w / 4;
 
-      turret.heart.x = turret.x + turret.w / 2 - turret.heart.w / 2;
-      turret.heart.y = turret.y + 2;
-
-      turret.cannon.w = turret.w / 4;
-      turret.cannon.x = turret.w / 2 - turret.cannon.w / 2;
+      player.heart.x = player.x + player.w / 2 - player.heart.w / 2;
+      player.heart.y = player.y + 2;
 
       // collision against blocks
       blocks.forEach((block) => {
-        if (collisionDetected(turret.heart, block) && i_frames < 1) {
-          // particle effect and screen shake on turret destruction
+        if (collisionDetected(player.heart, block) && i_frames < 1) {
+          // particle effect and screen shake on player destruction
           poof(
-            turret.x + turret.w / 2,
-            turret.y + turret.h - turret.h / 4,
-            turret.color,
+            player.x + player.w / 2,
+            player.y + player.h - player.h / 4,
+            player.color,
             1,
             false
           );
@@ -476,91 +483,13 @@ const update = (dt) => {
           // remove block that hit the player
           GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
 
-          // split the player into smaller turrets
-          split(turret);
+          // split the player into smaller players
+          split(player);
 
           // give the player a span of invincibility frames
           i_frames = invincibility_duration;
         }
       });
-
-      shots.forEach((shot) => {
-        if (collisionDetected(turret.heart, shot) && i_frames < 1) {
-          // particle effect and screen shake on turret destruction
-          poof(
-            turret.x + turret.w / 2,
-            turret.y + turret.h - turret.h / 4,
-            turret.color,
-            1,
-            false
-          );
-          screenshakesRemaining = HIT_SCREENSHAKES;
-
-          // remove shot that hit the player
-          GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(shot), 1);
-
-          // split the player into smaller turrets
-          split(turret);
-
-          // give the player a span of invincibility frames
-          i_frames = invincibility_duration;
-        }
-      });
-    });
-
-    // shot groups
-    shots.forEach((shot) => {
-      trackPosition(shot);
-
-      shot.prev_x = shot.x;
-      shot.prev_y = shot.y;
-      shot.y += shot.dy;
-
-      blocks.forEach((block) => {
-        if (collisionDetected(shot, block)) {
-          // update score based on the split block's width
-          let points = 32 / block.w;
-          score += points;
-
-          // split the block into 2 new blocks
-          split(block);
-
-          // remove the shot that hit the block
-          let index = GAME_OBJECTS.indexOf(shot);
-          GAME_OBJECTS.splice(index, 1);
-        }
-      });
-
-      shots.forEach((other_shot) => {
-        if (shot === other_shot) return;
-        if (collisionDetected(shot, other_shot)) {
-          shot.remove = true;
-          other_shot.remove = true;
-        }
-      });
-
-      // wall collision
-      if (shot.x + shot.w > GAME_W || shot.x + shot.w < 0) {
-        shot.dx *= -1;
-      }
-      if (shot.y + shot.w > GAME_H || shot.y + shot.w < 0) {
-        shot.dy *= -1;
-        shot.health -= 1;
-      }
-
-      // health coloring
-      if (shot.health === 3) {
-        shot.color = GREEN;
-      } else if (shot.health === 2) {
-        shot.color = YELLOW;
-      } else if (shot.health === 1) {
-        shot.color = RED;
-      }
-
-      // health check
-      if (shot.health <= 0) {
-        shot.remove = true;
-      }
     });
 
     // block group
@@ -592,8 +521,8 @@ const update = (dt) => {
 
     // prevent pixelation on movement
     GAME_OBJECTS.forEach((obj) => {
-      obj.x = Math.floor(obj.x);
-      obj.y = Math.floor(obj.y);
+      // obj.x = Math.floor(obj.x);
+      // obj.y = Math.floor(obj.y);
     });
 
     // spawning
@@ -615,7 +544,7 @@ const update = (dt) => {
       }
     });
 
-    if (turrets.length < 1) {
+    if (players.length < 1) {
       game_state = "game_over";
     }
 
@@ -631,7 +560,7 @@ const update = (dt) => {
 };
 
 const draw = () => {
-  context.fillStyle = AQUAMARINE;
+  context.fillStyle = PURPLE;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   // render objects
@@ -641,7 +570,7 @@ const draw = () => {
       drawTrail(obj.positions, obj);
     }
 
-    // --- NEUMORPHIC RENDERING CODE ---
+    // --- LIGHT RENDERING CODE ---
     // TODO: factor in brightness of light
     // TODO: dynamically place light source
 
@@ -665,6 +594,7 @@ const draw = () => {
 
     // Create gradient fill color
     context.fillStyle = obj.color;
+    console.log(obj.y);
     var gradient = context.createLinearGradient(
       obj.x,
       obj.y,
@@ -672,15 +602,18 @@ const draw = () => {
       obj.y + obj.h
     );
     gradient.addColorStop(0, firstGradientColor);
+    // gradient.addColorStop(1 * LIGHT_SOURCE.brightness, firstGradientColor);
     gradient.addColorStop(1, secondGradientColor);
 
     // Light shadow
-    context.shadowInset = false;
-    context.shadowOffsetX = -4;
-    context.shadowOffsetY = -4;
-    context.shadowBlur = 60;
-    context.shadowColor = lightColor;
-    roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+    if (obj.glow) {
+      context.shadowInset = false;
+      context.shadowOffsetX = -4;
+      context.shadowOffsetY = -4;
+      context.shadowBlur = 60;
+      context.shadowColor = lightColor;
+      roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+    }
 
     // Dark shadow
     context.rect(-obj.w, -obj.h, obj.h, obj.w);
@@ -718,8 +651,8 @@ const draw = () => {
 
     // --- END NEUMORPHIC RENDERING CODE ---
 
-    // turret-specific rendering
-    if (obj.type === "turret") {
+    // player-specific rendering
+    if (obj.type === "player") {
       // i frame flash
       if (i_frames > 0) {
         obj.color = i_frames % 2 === 0 ? "#ffffff" : MID_PURPLE;
@@ -728,15 +661,6 @@ const draw = () => {
       // heart
       // context.fillStyle = obj.heart.color;
       // context.fillRect(obj.heart.x, obj.heart.y, obj.heart.w, obj.heart.h);
-
-      // gun
-      context.fillStyle = obj.cannon.color;
-      context.fillRect(
-        obj.x + obj.cannon.x,
-        obj.y + obj.cannon.y,
-        obj.cannon.w,
-        obj.cannon.h
-      );
     }
   });
 
