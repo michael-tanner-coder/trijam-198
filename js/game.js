@@ -1,11 +1,13 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: spawn fire wood blocks
 // TODO: ghost spawning
+// TODO: ghost follow player
 // TODO: ghost collision + game over
 // TODO: game reset
-// TODO: win condition (get 5 fire wood blocks)
+// TODO: lose condition (fire goes out or hit by ghost)
+// TODO: fire spawn
+// TODO: fire lifetime + glow
 // TODO: night time color palette
 
 // NICE TO HAVE:
@@ -112,24 +114,31 @@ const shoot = (shooter, projectile) => {
 
 const spawnGhost = () => {
   let new_block = JSON.parse(JSON.stringify(BLOCK));
-
-  // if (score > 200) {
-  //   new_block.w = 64;
-  //   new_block.h = 16;
-  // }
-
-  // if (score > 400) {
-  //   new_block.w = 128;
-  //   new_block.h = 16;
-  // }
-
   new_block.x = Math.floor(Math.random() * GAME_W - BLOCK_W);
   if (new_block.x < 0) new_block.x += BLOCK_W;
   new_block.y = 0;
   GAME_OBJECTS.push(new_block);
 };
 
-const spawnWood = () => {};
+const spawnWood = () => {
+  let new_block = JSON.parse(JSON.stringify(BLOCK));
+
+  new_block.x = Math.floor(Math.random() * GAME_W - new_block.w);
+  new_block.y = Math.floor(Math.random() * GAME_W - new_block.h);
+
+  if (new_block.x < 0) new_block.x += new_block.w;
+  if (new_block.y < 0) new_block.y += new_block.h;
+
+  while (
+    getDistance(player.heart.x, player.heart.y, new_block.x, new_block.y) <
+    player.w
+  ) {
+    new_block.x += new_block.w;
+    new_block.y += new_block.h;
+  }
+
+  GAME_OBJECTS.push(new_block);
+};
 
 const split = (object) => {
   // make 2 new objects
@@ -493,6 +502,8 @@ const update = (dt) => {
           // give the player a span of invincibility frames
           // i_frames = invincibility_duration;
 
+          spawnWood();
+
           score += 1;
         }
       });
@@ -515,11 +526,17 @@ const update = (dt) => {
       block.y += block.dy * block.speed;
 
       // wall collision
-      if (block.x + block.w > GAME_W || block.x + block.w < 0) {
-        block.dx *= -1;
+      if (block.x + block.w > GAME_W) {
+        block.dx = -1;
       }
-      if (block.y + block.w > GAME_H || block.y + block.w < 0) {
-        block.dy *= -1;
+      if (block.x < 0) {
+        block.dx = 1;
+      }
+      if (block.y + block.w > GAME_H) {
+        block.dy = -1;
+      }
+      if (block.y < 0) {
+        block.dy = 1;
       }
 
       // block.speed = easing(block.speed, block.top_speed);
@@ -536,6 +553,7 @@ const update = (dt) => {
     spawn_timer++;
     if (spawn_timer >= spawn_rate && spawn_count < spawn_limit) {
       // spawnGhost();
+      // spawnWood();
       spawn_timer = 0;
     }
 
