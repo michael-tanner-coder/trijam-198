@@ -1,9 +1,7 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: generate forest
 // TODO: spawn fire wood blocks
-// TODO: wood collision pickup
 // TODO: ghost spawning
 // TODO: ghost collision + game over
 // TODO: game reset
@@ -38,7 +36,6 @@ var game_state = "in_game";
 
 // GRID PROPS
 const BLOCK_W = 32;
-const BLOCK_H = 32;
 const COLS = 6;
 const ROWS = 4;
 const PADDING = 4;
@@ -92,8 +89,8 @@ const BLOCK = {
   prev_x: 0,
   prev_y: 0,
   w: BLOCK_W,
-  h: BLOCK_H,
-  color: YELLOW,
+  h: 16,
+  color: "#964B00",
   speed: 0,
   type: "block",
   positions: [],
@@ -478,25 +475,25 @@ const update = (dt) => {
       blocks.forEach((block) => {
         if (collisionDetected(player.heart, block) && i_frames < 1) {
           // particle effect and screen shake on player destruction
-          // poof(
-          //   player.x + player.w / 2,
-          //   player.y + player.h - player.h / 4,
-          //   player.color,
-          //   1,
-          //   false
-          // );
+          poof(
+            player.x + player.w / 2,
+            player.y + player.h - player.h / 4,
+            block.color,
+            1,
+            false
+          );
           // screenshakesRemaining = HIT_SCREENSHAKES;
 
           // remove block that hit the player
-          // GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
+          GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
 
           // split the player into smaller players
           // split(player);
 
           // give the player a span of invincibility frames
           // i_frames = invincibility_duration;
-          player.x = player.prev_x;
-          player.y = player.prev_y;
+
+          score += 1;
         }
       });
     });
