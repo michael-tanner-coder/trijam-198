@@ -615,15 +615,57 @@ const draw = () => {
       drawTrail(obj.positions, obj);
     }
 
-    // render object
+    // Get colors for gradients and shadows
     context.fillStyle = obj.color;
-    context.fillRect(obj.x, obj.y, obj.w, obj.h);
+    const firstGradientColor = colorLuminance(obj.color, 0.2);
+    const secondGradientColor = colorLuminance(obj.color, -0.17);
+    const darkColor = colorLuminance(obj.color, 0.1 * -1);
+    const lightColor = colorLuminance(obj.color, 0.15);
+
+    // create gradient color
+    context.fillStyle = obj.color;
+    var gradient = context.createLinearGradient(
+      obj.x,
+      obj.y,
+      obj.x + obj.w,
+      obj.y + obj.h
+    );
+    gradient.addColorStop(0, firstGradientColor);
+    gradient.addColorStop(1, secondGradientColor);
+
+    // Secondary shape and shadow
+    context.shadowInset = false;
+    context.shadowOffsetX = obj.w;
+    context.shadowOffsetY = obj.h;
+    context.shadowBlur = 60;
+    context.shadowColor = lightColor;
+    roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+
+    // drop shadow
+    context.rect(-obj.w, -obj.h, obj.h, obj.w);
+    context.shadowInset = false;
+    context.shadowOffsetX = 4;
+    context.shadowOffsetY = 4;
+    context.shadowBlur = 8;
+    context.shadowColor = "#00000055";
+    context.fillStyle = darkColor;
+    roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+
+    // Reset shadow drawing
+    context.shadowColor = "none";
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
+    context.shadowBlur = 0;
+
+    // render object
+    context.fillStyle = gradient;
+    roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
 
     // turret-specific rendering
     if (obj.type === "turret") {
       // i frame flash
       if (i_frames > 0) {
-        obj.color = i_frames % 2 === 0 ? "white" : MID_PURPLE;
+        obj.color = i_frames % 2 === 0 ? "#ffffff" : MID_PURPLE;
       }
 
       // heart
