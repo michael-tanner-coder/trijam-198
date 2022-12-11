@@ -10,6 +10,16 @@
 const GAME_W = 320;
 const GAME_H = 240;
 
+const LIGHT_SOURCE = {
+  x: 0,
+  y: 0,
+  sprite: "",
+  brightness: 1,
+};
+let target_alpha = 0.04;
+let sun_alpha = 0.01;
+let sun_alpha_2 = 0.01;
+
 const STATES = {
   game_over: "game_over",
   start: "start",
@@ -366,8 +376,18 @@ const update = (dt) => {
   let blocks = GAME_OBJECTS.filter((obj) => obj.type === "block");
   let shots = GAME_OBJECTS.filter((obj) => obj.type === "shot");
 
-  // fx
+  // vfx
   particles.update();
+
+  target_alpha = Math.random() * 0.02;
+  sun_alpha += Math.sin(1 / target_alpha) * 0.01;
+  target_alpha = Math.random() * 0.02;
+  sun_alpha_2 += Math.sin(1 / target_alpha) * 0.01;
+
+  sun_alpha = clamp(sun_alpha, 0.01, 0.4);
+  sun_alpha_2 = clamp(sun_alpha_2, 0.01, 0.4);
+
+  LIGHT_SOURCE.brightness = sun_alpha;
 
   // GAME STATES
   if (game_state === STATES.menu) {
@@ -570,6 +590,7 @@ const update = (dt) => {
       // block.speed = easing(block.speed, block.top_speed);
     });
 
+    // prevent pixelation on movement
     GAME_OBJECTS.forEach((obj) => {
       obj.x = Math.floor(obj.x);
       obj.y = Math.floor(obj.y);
@@ -621,8 +642,21 @@ const draw = () => {
     }
 
     // --- NEUMORPHIC RENDERING CODE ---
+    // TODO: factor in brightness of light
+    // TODO: dynamically place light source
 
     // Get colors for gradients and shadows
+    let distance_to_light = Math.ceil(
+      getDistance(obj.x, obj.y, LIGHT_SOURCE.x, LIGHT_SOURCE.y)
+    );
+    let light_angle =
+      Math.atan2(
+        LIGHT_SOURCE.y - obj.y + obj.h / 2,
+        LIGHT_SOURCE.x - obj.x + obj.w / 2
+      ) *
+      (180 / Math.PI);
+
+    console.log(light_angle);
     context.fillStyle = obj.color;
     const firstGradientColor = colorLuminance(obj.color, 0.2);
     const secondGradientColor = colorLuminance(obj.color, -0.17);
@@ -651,13 +685,25 @@ const draw = () => {
     // Dark shadow
     context.rect(-obj.w, -obj.h, obj.h, obj.w);
     context.shadowInset = false;
-    context.shadowOffsetX = 4;
-    context.shadowOffsetY = 4;
-    context.shadowBlur = 8;
+
+    // context.shadowOffsetX = 4;
+    // context.shadowOffsetY = 4;
+    context.shadowOffsetX = -4 * Math.cos((light_angle * Math.PI) / 180);
+    context.shadowOffsetY = -4 * Math.sin((light_angle * Math.PI) / 180);
+
+    context.shadowBlur = 800 / distance_to_light;
     context.globalAlpha = 0.5;
     context.shadowColor = "#000000";
     context.fillStyle = "#000000";
-    roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+
+    let shadow_w =
+      obj.w +
+      (obj.w / distance_to_light) * Math.cos((light_angle * Math.PI) / 180);
+    let shadow_h =
+      obj.h +
+      (obj.h / distance_to_light) * Math.sin((light_angle * Math.PI) / 180);
+
+    roundRect(context, obj.x, obj.y, shadow_w, shadow_h, 4, true, false);
     context.globalAlpha = 1;
 
     // Reset shadow drawing
@@ -693,6 +739,12 @@ const draw = () => {
       );
     }
   });
+
+  context.globalAlpha = sun_alpha;
+  context.drawImage(IMAGES["sun_1"], 0, 0);
+  context.globalAlpha = sun_alpha_2;
+  context.drawImage(IMAGES["sun_2"], 0, 0);
+  context.globalAlpha = 1;
 
   // timer
   if (game_state === STATES.start) {

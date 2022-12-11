@@ -2,7 +2,8 @@ let IMAGES = {}; // GLOBAL IMAGE MAP: DON'T EDIT
 var images_loaded = false;
 
 const image_list = [
-  //   { file: "myimage.png", name: "myimage" },
+  { file: "sungradient.png", name: "sun_1" },
+  { file: "sungradient2.png", name: "sun_2" },
   // <-- Add your sprite in here
 ];
 
