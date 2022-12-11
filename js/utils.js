@@ -33,6 +33,7 @@ function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
     ctx.fill();
   }
   if (stroke) {
+    ctx.lineWidth = 1;
     ctx.stroke();
   }
 }

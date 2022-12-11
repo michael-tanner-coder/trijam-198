@@ -570,6 +570,11 @@ const update = (dt) => {
       // block.speed = easing(block.speed, block.top_speed);
     });
 
+    GAME_OBJECTS.forEach((obj) => {
+      obj.x = Math.floor(obj.x);
+      obj.y = Math.floor(obj.y);
+    });
+
     // spawning
     let spawn_count = blocks.length;
     spawn_timer++;
@@ -610,10 +615,12 @@ const draw = () => {
 
   // render objects
   GAME_OBJECTS.forEach((obj) => {
-    // render trail underneath objects
+    // Render trail underneath objects
     if (obj.has_trail) {
       drawTrail(obj.positions, obj);
     }
+
+    // --- NEUMORPHIC RENDERING CODE ---
 
     // Get colors for gradients and shadows
     context.fillStyle = obj.color;
@@ -622,7 +629,7 @@ const draw = () => {
     const darkColor = colorLuminance(obj.color, 0.1 * -1);
     const lightColor = colorLuminance(obj.color, 0.15);
 
-    // create gradient color
+    // Create gradient fill color
     context.fillStyle = obj.color;
     var gradient = context.createLinearGradient(
       obj.x,
@@ -633,23 +640,25 @@ const draw = () => {
     gradient.addColorStop(0, firstGradientColor);
     gradient.addColorStop(1, secondGradientColor);
 
-    // Secondary shape and shadow
+    // Light shadow
     context.shadowInset = false;
-    context.shadowOffsetX = obj.w;
-    context.shadowOffsetY = obj.h;
+    context.shadowOffsetX = -4;
+    context.shadowOffsetY = -4;
     context.shadowBlur = 60;
     context.shadowColor = lightColor;
     roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
 
-    // drop shadow
+    // Dark shadow
     context.rect(-obj.w, -obj.h, obj.h, obj.w);
     context.shadowInset = false;
     context.shadowOffsetX = 4;
     context.shadowOffsetY = 4;
     context.shadowBlur = 8;
-    context.shadowColor = "#00000055";
-    context.fillStyle = darkColor;
+    context.globalAlpha = 0.5;
+    context.shadowColor = "#000000";
+    context.fillStyle = "#000000";
     roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+    context.globalAlpha = 1;
 
     // Reset shadow drawing
     context.shadowColor = "none";
@@ -657,9 +666,11 @@ const draw = () => {
     context.shadowOffsetY = 0;
     context.shadowBlur = 0;
 
-    // render object
+    // Render object
     context.fillStyle = gradient;
     roundRect(context, obj.x, obj.y, obj.w, obj.h, 4, true, false);
+
+    // --- END NEUMORPHIC RENDERING CODE ---
 
     // turret-specific rendering
     if (obj.type === "turret") {
