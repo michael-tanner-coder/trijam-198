@@ -62,3 +62,7 @@ function colorLuminance(hex, lum) {
 function getDistance(x1, y1, x2, y2) {
   return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
+
+function choose(choices) {
+  return choices[Math.floor(Math.random() * choices.length)];
+}

@@ -1,7 +1,6 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: ghost spawning
 // TODO: ghost follow player
 // TODO: ghost collision + game over
 // TODO: game reset
@@ -99,6 +98,22 @@ const BLOCK = {
   has_trail: false,
   glow: true,
 };
+const GHOST = {
+  x: 0,
+  y: 0,
+  dx: 0,
+  dy: 0,
+  prev_x: 0,
+  prev_y: 0,
+  w: 32,
+  h: 32,
+  color: "#ffffff",
+  speed: 2,
+  type: "ghost",
+  positions: [],
+  has_trail: true,
+  glow: true,
+};
 
 // PLAYERS
 let player = JSON.parse(JSON.stringify(PLAYER));
@@ -112,12 +127,32 @@ const shoot = (shooter, projectile) => {
   GAME_OBJECTS.push(new_shot);
 };
 
+const SPAWN_POINTS = [
+  { x: 0, y: 0 },
+  { x: GAME_W, y: 0 },
+  { x: 0, y: GAME_H },
+  { x: GAME_W, y: GAME_H },
+];
+
 const spawnGhost = () => {
-  let new_block = JSON.parse(JSON.stringify(BLOCK));
-  new_block.x = Math.floor(Math.random() * GAME_W - BLOCK_W);
-  if (new_block.x < 0) new_block.x += BLOCK_W;
-  new_block.y = 0;
-  GAME_OBJECTS.push(new_block);
+  let ghost = JSON.parse(JSON.stringify(GHOST));
+  // ghost.x = Math.floor(Math.random() * GAME_W - BLOCK_W);
+  // if (ghost.x < 0) ghost.x += BLOCK_W;
+  // ghost.y = 0;
+
+  // pick spawn point
+  let point = choose(SPAWN_POINTS);
+  while (true) {
+    if (
+      getDistance(point.x, point.y, player.heart.x, player.heart.y) >
+      player.w * 2
+    ) {
+      ghost.x = point.x;
+      ghost.y = point.y;
+      break;
+    }
+  }
+  GAME_OBJECTS.push(ghost);
 };
 
 const spawnWood = () => {
@@ -399,6 +434,7 @@ const update = (dt) => {
   // collision groups
   let players = GAME_OBJECTS.filter((obj) => obj.type === "player");
   let blocks = GAME_OBJECTS.filter((obj) => obj.type === "block");
+  let ghosts = GAME_OBJECTS.filter((obj) => obj.type === "ghost");
 
   // vfx
   particles.update();
@@ -549,11 +585,10 @@ const update = (dt) => {
     });
 
     // spawning
-    let spawn_count = blocks.length;
+    let spawn_count = ghosts.length;
     spawn_timer++;
     if (spawn_timer >= spawn_rate && spawn_count < spawn_limit) {
-      // spawnGhost();
-      // spawnWood();
+      spawnGhost();
       spawn_timer = 0;
     }
 
