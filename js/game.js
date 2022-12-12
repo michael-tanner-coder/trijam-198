@@ -526,7 +526,20 @@ const resetGame = () => {
 
   player = JSON.parse(JSON.stringify(PLAYER));
   fire_red = JSON.parse(JSON.stringify(FIRE));
-  GAME_OBJECTS = [player, BLOCK, fire_red, fire_yellow];
+  GAME_OBJECTS = [
+    player,
+    BLOCK,
+    fire_red,
+    fire_yellow,
+    up_right_tree,
+    up_left_tree,
+    down_right_tree,
+    down_left_tree,
+    up_right_trunk,
+    up_left_trunk,
+    down_right_trunk,
+    down_left_trunk,
+  ];
 
   game_state = STATES.start;
   start_timer = 4;
