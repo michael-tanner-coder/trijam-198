@@ -131,7 +131,24 @@ const FIRE = {
   solid: true,
 };
 
-const FIRE_WOOD = {
+const TREE_TRUNK = {
+  x: GAME_W / 2 - 8,
+  y: GAME_H / 2 + 16,
+  dx: 0,
+  dy: 0,
+  prev_x: 0,
+  prev_y: 0,
+  w: 8,
+  h: 16,
+  color: "#964B00",
+  speed: 0,
+  type: "tree",
+  positions: [],
+  has_trail: false,
+  glow: true,
+  solid: true,
+};
+const TREE_LEAVES = {
   x: GAME_W / 2 - 8,
   y: GAME_H / 2 + 16,
   dx: 0,
@@ -139,15 +156,45 @@ const FIRE_WOOD = {
   prev_x: 0,
   prev_y: 0,
   w: 32,
-  h: 8,
-  color: "#964B00",
+  h: 32,
+  color: AQUAMARINE,
   speed: 0,
-  type: "fire",
+  type: "tree",
   positions: [],
   has_trail: false,
   glow: true,
   solid: true,
 };
+
+let up_right_tree = JSON.parse(JSON.stringify(TREE_LEAVES));
+let up_right_trunk = JSON.parse(JSON.stringify(TREE_TRUNK));
+up_right_tree.x = GAME_W - 48;
+up_right_tree.y = 16;
+up_right_trunk.x = up_right_tree.x + up_right_tree.w / 2 - up_right_trunk.w / 2;
+up_right_trunk.y = up_right_tree.y + up_right_tree.h;
+
+let up_left_tree = JSON.parse(JSON.stringify(TREE_LEAVES));
+let up_left_trunk = JSON.parse(JSON.stringify(TREE_TRUNK));
+up_left_tree.x = 16;
+up_left_tree.y = 16;
+up_left_trunk.x = up_left_tree.x + up_left_tree.w / 2 - up_left_trunk.w / 2;
+up_left_trunk.y = up_left_tree.y + up_left_tree.h;
+
+let down_right_tree = JSON.parse(JSON.stringify(TREE_LEAVES));
+let down_right_trunk = JSON.parse(JSON.stringify(TREE_TRUNK));
+down_right_tree.x = GAME_W - 48;
+down_right_tree.y = GAME_H - 48;
+down_right_trunk.x =
+  down_right_tree.x + down_right_tree.w / 2 - down_right_trunk.w / 2;
+down_right_trunk.y = down_right_tree.y + down_right_tree.h;
+
+let down_left_tree = JSON.parse(JSON.stringify(TREE_LEAVES));
+let down_left_trunk = JSON.parse(JSON.stringify(TREE_TRUNK));
+down_left_tree.x = 16;
+down_left_tree.y = GAME_H - 48;
+down_left_trunk.x =
+  down_left_tree.x + down_left_tree.w / 2 - down_left_trunk.w / 2;
+down_left_trunk.y = down_left_tree.y + down_left_tree.h;
 
 // PLAYERS
 
@@ -160,7 +207,20 @@ fire_yellow.y = FIRE.y + FIRE.h / 2 - fire_yellow.h / 2;
 let fire_red = JSON.parse(JSON.stringify(FIRE));
 
 let player = JSON.parse(JSON.stringify(PLAYER));
-let GAME_OBJECTS = [player, BLOCK, fire_red, fire_yellow];
+let GAME_OBJECTS = [
+  player,
+  BLOCK,
+  fire_red,
+  fire_yellow,
+  up_right_tree,
+  up_left_tree,
+  down_right_tree,
+  down_left_tree,
+  up_right_trunk,
+  up_left_trunk,
+  down_right_trunk,
+  down_left_trunk,
+];
 
 // UTILS
 const shoot = (shooter, projectile) => {
@@ -572,16 +632,9 @@ const update = (dt) => {
             1,
             false
           );
-          // screenshakesRemaining = HIT_SCREENSHAKES;
 
           // remove block that hit the player
           GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
-
-          // split the player into smaller players
-          // split(player);
-
-          // give the player a span of invincibility frames
-          // i_frames = invincibility_duration;
 
           spawnWood();
 
@@ -639,6 +692,22 @@ const update = (dt) => {
       if (collisionDetected(player.heart, ghost)) {
         game_state = STATES.game_over;
         game_over_text = "You got spooked!";
+      }
+
+      if (collisionDetected(fire_red, ghost)) {
+        // particle effect and screen shake on player destruction
+        poof(
+          ghost.x + ghost.w / 2,
+          ghost.y + ghost.h - ghost.h / 4,
+          ghost.color,
+          1,
+          false
+        );
+
+        score += 10;
+
+        // remove block that hit the player
+        GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(ghost), 1);
       }
     });
 
