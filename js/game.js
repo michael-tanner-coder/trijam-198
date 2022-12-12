@@ -28,7 +28,7 @@ const STATES = {
   in_game: "in_game",
   menu: "menu",
 };
-var game_state = "in_game";
+var game_state = "menu";
 
 let game_over_text = "YOU GOT SPOOKED!";
 
@@ -897,12 +897,15 @@ const draw = () => {
 
   // timer
   if (game_state === STATES.start) {
-    context.fillStyle = "white";
+    context.fillStyle = "yellow";
     context.fillText(Math.floor(start_timer), GAME_W / 2 - 4, GAME_H / 2 - 16);
   }
 
   if (game_state === STATES.game_over) {
-    context.fillStyle = "white";
+    context.fillStyle = "black";
+    context.fillRect(0, GAME_H / 2 - 28, GAME_W, 64);
+
+    context.fillStyle = "yellow";
     let game_over_w = context.measureText(game_over_text).width;
     context.fillText(game_over_text, GAME_W / 2 - game_over_w / 2, GAME_H / 2);
 
@@ -916,15 +919,17 @@ const draw = () => {
   }
 
   if (game_state === STATES.menu) {
-    context.fillStyle = "white";
+    context.fillStyle = "black";
+    context.fillRect(0, GAME_H / 2 - 28, GAME_W, 96);
+    context.fillStyle = "yellow";
 
-    let move_text = "MOVE WITH LEFT / RIGHT KEYS";
-    let shoot_text = "SHOOT WITH SPACEBAR";
+    let move_text = "AVOID GHOSTS WITH ARROW KEYS";
+    let shoot_text = "GET WOOD TO KEEP THE FIRE GOING";
     let start_text = "PRESS ENTER TO START";
     let move_text_width = context.measureText(move_text).width;
     let shoot_text_width = context.measureText(shoot_text).width;
     let start_text_width = context.measureText(start_text).width;
-    context.fillStyle = "white";
+    context.fillStyle = "yellow";
     context.fillText(move_text, GAME_W / 2 - move_text_width / 2, GAME_H / 2);
     context.fillText(
       shoot_text,
@@ -942,7 +947,7 @@ const draw = () => {
   particles.draw();
 
   // HUD
-  context.fillStyle = "white";
+  context.fillStyle = "yellow";
   context.fillText(score, 12, 16);
 };
 
