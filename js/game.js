@@ -1,12 +1,13 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: lose condition (fire goes out or hit by ghost)
 // TODO: fire spawn
 // TODO: fire lifetime + glow
+// TODO: lose condition (fire goes out or hit by ghost)
 // TODO: night time color palette
 
 // NICE TO HAVE:
+// TODO: draw eyes on characters
 // TODO: start menu
 // TODO: custom controls
 // TODO: sound effects
@@ -95,6 +96,7 @@ const BLOCK = {
   has_trail: false,
   glow: true,
 };
+
 const GHOST = {
   x: 0,
   y: 0,
@@ -112,9 +114,59 @@ const GHOST = {
   glow: true,
 };
 
+const FIRE = {
+  x: GAME_W / 2 - 16,
+  y: GAME_H / 2 - 16,
+  dx: 0,
+  dy: 0,
+  prev_x: 0,
+  prev_y: 0,
+  w: 32,
+  h: 32,
+  color: RED,
+  speed: 0,
+  type: "fire",
+  positions: [],
+  has_trail: false,
+  glow: true,
+  solid: true,
+};
+
+const FIRE_WOOD = {
+  x: GAME_W / 2 - 8,
+  y: GAME_H / 2 + 16,
+  dx: 0,
+  dy: 0,
+  prev_x: 0,
+  prev_y: 0,
+  w: 32,
+  h: 8,
+  color: "#964B00",
+  speed: 0,
+  type: "fire",
+  positions: [],
+  has_trail: false,
+  glow: true,
+  solid: true,
+};
+
 // PLAYERS
+
+let fire_yellow = JSON.parse(JSON.stringify(FIRE));
+fire_yellow.color = YELLOW;
+fire_yellow.w = 16;
+fire_yellow.h = 16;
+fire_yellow.x = FIRE.x + FIRE.w / 2 - fire_yellow.w / 2;
+fire_yellow.y = FIRE.y + FIRE.h / 2 - fire_yellow.h / 2;
+let fire_white = JSON.parse(JSON.stringify(FIRE));
+fire_white.color = "#ffffff";
+fire_white.w = 8;
+fire_white.h = 8;
+fire_white.x = FIRE.x + FIRE.w / 2 - fire_white.w / 2;
+fire_white.y = FIRE.y + FIRE.h / 2 - fire_white.h / 2;
+
 let player = JSON.parse(JSON.stringify(PLAYER));
-let GAME_OBJECTS = [player, BLOCK];
+let GAME_OBJECTS = [player, BLOCK, FIRE, fire_yellow];
 
 // UTILS
 const shoot = (shooter, projectile) => {
@@ -419,13 +471,13 @@ const resetGame = () => {
   GAME_OBJECTS.length = 0;
 
   player = JSON.parse(JSON.stringify(PLAYER));
-  GAME_OBJECTS = [player, BLOCK];
+  GAME_OBJECTS = [player, BLOCK, FIRE, fire_yellow];
 
   game_state = STATES.start;
   start_timer = 4;
   score = 0;
 };
-sun_alpha
+
 // LOOP
 const update = (dt) => {
   // collision groups
@@ -579,8 +631,6 @@ const update = (dt) => {
     ghosts.forEach((ghost) => {
       ghost.x = easingWithRate(ghost.x, player.x, 0.01);
       ghost.y = easingWithRate(ghost.y, player.y, 0.01);
-      // LIGHT_SOURCE.x = ghost.x;
-      // LIGHT_SOURCE.y = ghost.y;
 
       if (collisionDetected(player.heart, ghost)) {
         game_state = STATES.game_over;
@@ -602,6 +652,9 @@ const update = (dt) => {
     }
 
     updateScreenshake();
+
+    LIGHT_SOURCE.x = FIRE.x + FIRE.w / 2;
+    LIGHT_SOURCE.y = FIRE.y + FIRE.h / 2;
 
     // despawning
     GAME_OBJECTS.forEach((obj) => {
@@ -733,9 +786,9 @@ const draw = () => {
   });
 
   context.globalAlpha = sun_alpha;
-  context.drawImage(IMAGES["sun_1"], 0, 0);
+  // context.drawImage(IMAGES["sun_1"], 0, 0);
   context.globalAlpha = sun_alpha_2;
-  context.drawImage(IMAGES["sun_2"], 0, 0);
+  // context.drawImage(IMAGES["sun_2"], 0, 0);
   context.globalAlpha = 1;
 
   // timer
