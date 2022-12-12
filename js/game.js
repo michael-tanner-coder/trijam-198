@@ -1,9 +1,6 @@
 // GAME CONCEPT: A spooky camping trip! Run through a forest to collect fire wood, but don't get caught by Spoopy the Ghost!
 
 // CORE:
-// TODO: fire spawn
-// TODO: fire lifetime + glow
-// TODO: lose condition (fire goes out or hit by ghost)
 // TODO: night time color palette
 
 // NICE TO HAVE:
@@ -32,6 +29,8 @@ const STATES = {
   menu: "menu",
 };
 var game_state = "in_game";
+
+let game_over_text = "YOU GOT SPOOKED!";
 
 // GRID PROPS
 const BLOCK_W = 32;
@@ -81,8 +80,8 @@ const SHOT = {
 };
 
 const BLOCK = {
-  x: GAME_W / 2,
-  y: 120,
+  x: GAME_W / 2 - 16,
+  y: 32,
   dx: 0,
   dy: 0,
   prev_x: 0,
@@ -158,15 +157,10 @@ fire_yellow.w = 16;
 fire_yellow.h = 16;
 fire_yellow.x = FIRE.x + FIRE.w / 2 - fire_yellow.w / 2;
 fire_yellow.y = FIRE.y + FIRE.h / 2 - fire_yellow.h / 2;
-let fire_white = JSON.parse(JSON.stringify(FIRE));
-fire_white.color = "#ffffff";
-fire_white.w = 8;
-fire_white.h = 8;
-fire_white.x = FIRE.x + FIRE.w / 2 - fire_white.w / 2;
-fire_white.y = FIRE.y + FIRE.h / 2 - fire_white.h / 2;
+let fire_red = JSON.parse(JSON.stringify(FIRE));
 
 let player = JSON.parse(JSON.stringify(PLAYER));
-let GAME_OBJECTS = [player, BLOCK, FIRE, fire_yellow];
+let GAME_OBJECTS = [player, BLOCK, fire_red, fire_yellow];
 
 // UTILS
 const shoot = (shooter, projectile) => {
@@ -471,7 +465,8 @@ const resetGame = () => {
   GAME_OBJECTS.length = 0;
 
   player = JSON.parse(JSON.stringify(PLAYER));
-  GAME_OBJECTS = [player, BLOCK, FIRE, fire_yellow];
+  fire_red = JSON.parse(JSON.stringify(FIRE));
+  GAME_OBJECTS = [player, BLOCK, fire_red, fire_yellow];
 
   game_state = STATES.start;
   start_timer = 4;
@@ -484,6 +479,7 @@ const update = (dt) => {
   let players = GAME_OBJECTS.filter((obj) => obj.type === "player");
   let blocks = GAME_OBJECTS.filter((obj) => obj.type === "block");
   let ghosts = GAME_OBJECTS.filter((obj) => obj.type === "ghost");
+  let fire = GAME_OBJECTS.filter((obj) => obj.type === "fire");
 
   // vfx
   particles.update();
@@ -590,6 +586,14 @@ const update = (dt) => {
           spawnWood();
 
           score += 1;
+
+          fire.forEach((f) => {
+            f.w += 10;
+            f.h += 10;
+
+            if (f.w > 32) f.w = 32;
+            if (f.h > 32) f.h = 32;
+          });
         }
       });
     });
@@ -634,8 +638,21 @@ const update = (dt) => {
 
       if (collisionDetected(player.heart, ghost)) {
         game_state = STATES.game_over;
+        game_over_text = "You got spooked!";
       }
     });
+
+    // fire group
+    fire_red.w = easingWithRate(fire_red.w, 0, 0.005);
+    fire_red.h = easingWithRate(fire_red.h, 0, 0.005);
+    fire_red.x = GAME_W / 2 - fire_red.w / 2;
+    fire_red.y = GAME_H / 2 - fire_red.h / 2;
+    fire_red.x = Math.floor(fire_red.x);
+    fire_red.y = Math.floor(fire_red.y);
+    fire_yellow.w = fire_red.w / 2;
+    fire_yellow.h = fire_red.h / 2;
+    fire_yellow.x = fire_red.x + fire_red.w / 2 - fire_yellow.w / 2;
+    fire_yellow.y = fire_red.y + fire_red.h / 2 - fire_yellow.h / 2;
 
     // prevent pixelation on movement
     GAME_OBJECTS.forEach((obj) => {
@@ -653,8 +670,8 @@ const update = (dt) => {
 
     updateScreenshake();
 
-    LIGHT_SOURCE.x = FIRE.x + FIRE.w / 2;
-    LIGHT_SOURCE.y = FIRE.y + FIRE.h / 2;
+    LIGHT_SOURCE.x = fire_red.x + fire_red.w / 2;
+    LIGHT_SOURCE.y = fire_red.y + fire_red.h / 2;
 
     // despawning
     GAME_OBJECTS.forEach((obj) => {
@@ -667,6 +684,11 @@ const update = (dt) => {
 
     if (players.length < 1) {
       game_state = "game_over";
+    }
+
+    if (fire_red.w < 4) {
+      game_state = "game_over";
+      game_over_text = "Your fire went out!";
     }
 
     return;
@@ -780,8 +802,8 @@ const draw = () => {
       }
 
       // heart
-      context.fillStyle = "red";
-      context.fillRect(obj.heart.x, obj.heart.y, obj.heart.w, obj.heart.h);
+      // context.fillStyle = "red";
+      // context.fillRect(obj.heart.x, obj.heart.y, obj.heart.w, obj.heart.h);
     }
   });
 
@@ -799,7 +821,6 @@ const draw = () => {
 
   if (game_state === STATES.game_over) {
     context.fillStyle = "white";
-    let game_over_text = "YOU GOT SPOOKED!";
     let game_over_w = context.measureText(game_over_text).width;
     context.fillText(game_over_text, GAME_W / 2 - game_over_w / 2, GAME_H / 2);
 
