@@ -275,6 +275,7 @@ const spawnWood = () => {
     new_block.y += new_block.h;
   }
 
+  new_block.remove = false;
   GAME_OBJECTS.push(new_block);
 };
 
@@ -638,21 +639,9 @@ const update = (dt) => {
 
       // collision against blocks
       blocks.forEach((block) => {
+        // remove block when touched by player and spawn a new block
         if (collisionDetected(player.heart, block) && i_frames < 1) {
-          // particle effect and screen shake on player destruction
-          poof(
-            player.x + player.w / 2,
-            player.y + player.h - player.h / 4,
-            block.color,
-            1,
-            false
-          );
-
-          // remove block that hit the player
-          GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(block), 1);
-
-          spawnWood();
-
+          block.remove = true;
           score += 1;
 
           fire.forEach((f) => {
@@ -673,11 +662,6 @@ const update = (dt) => {
       block.prev_x = block.x;
       block.prev_y = block.y;
 
-      // block.positions.push({ x: block.prev_x, y: block.prev_y });
-      // if (block.positions.length > Math.floor(block.top_speed * 10)) {
-      //   block.positions.shift();
-      // }
-
       block.speed = 1;
       block.x += block.dx * block.speed;
       block.y += block.dy * block.speed;
@@ -695,8 +679,6 @@ const update = (dt) => {
       if (block.y < 0) {
         block.dy = 1;
       }
-
-      // block.speed = easing(block.speed, block.top_speed);
     });
 
     // ghost group
@@ -710,19 +692,8 @@ const update = (dt) => {
       }
 
       if (collisionDetected(fire_red, ghost)) {
-        // particle effect and screen shake on player destruction
-        poof(
-          ghost.x + ghost.w / 2,
-          ghost.y + ghost.h - ghost.h / 4,
-          ghost.color,
-          1,
-          false
-        );
-
         score += 10;
-
-        // remove block that hit the player
-        GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(ghost), 1);
+        ghost.remove = true;
       }
     });
 
@@ -746,9 +717,11 @@ const update = (dt) => {
 
     // spawning
     let spawn_count = ghosts.length;
+    let wood_count = blocks.length;
     spawn_timer++;
-    if (spawn_timer >= spawn_rate && spawn_count < spawn_limit) {
-      spawnGhost();
+    if (spawn_timer >= spawn_rate) {
+      if (spawn_count < spawn_limit) spawnGhost();
+      if (wood_count < spawn_limit) spawnWood();
       spawn_timer = 0;
     }
 
