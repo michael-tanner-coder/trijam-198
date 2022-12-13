@@ -511,11 +511,13 @@ const INPUTS = {
   Enter: false,
 };
 window.addEventListener("keydown", function (e) {
+  e.preventDefault();
   if (INPUTS[e.key] !== undefined) {
     INPUTS[e.key] = true;
   }
 });
 window.addEventListener("keyup", function (e) {
+  e.preventDefault();
   if (INPUTS[e.key] !== undefined) {
     INPUTS[e.key] = false;
   }
